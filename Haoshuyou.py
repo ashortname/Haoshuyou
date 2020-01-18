@@ -255,20 +255,24 @@ class Haoshuyou:
     ##  获取要回复的主题
     """
     def getTargetPage(self):
+        replyPage = None
         if len(self.lastVisited) <= 0:
-            self.log("此次回复主题：" + self.Menu.pageList[0].pageUrl)
+            #   self.log("此次回复主题：" + self.Menu.pageList[0].pageUrl)
             # 存入
             #   self.visited.append(self.Menu.pageList[0].tid)
             #   直接返回第一个
-            return self.Menu.pageList[0]
+            replyPage = self.Menu.pageList[0]
         #   遍历列表
         for temp in self.Menu.pageList:
             # 记录中不存在，则存入记录并返回
             if (temp not in self.lastVisited) and (temp not in self.visited):
                 #   存入帖子ID
                 #   self.visited.append(temp.tid)
-                self.log("此次回复主题：" + temp.pageUrl)
-                return temp
+                #   self.log("此次回复主题：" + temp.pageUrl)
+                replyPage = temp
+                break
+        self.log("此次回复主题：" + replyPage.pageUrl)
+        return replyPage  # 如果都已经回复过了，则直接回复第一个
 
     """
     ##  获取银币数目

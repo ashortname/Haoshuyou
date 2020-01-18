@@ -75,7 +75,8 @@ if __name__ == '__main__':
                     worker.log("发帖已到达限制...")
                     break
                 #   回帖成功，存入记录
-                worker.visited.append(page.tid)
+                if (page not in worker.lastVisited) and (page not in worker.visited):
+                    worker.visited.append(page.tid)
 
                 time.sleep(3)
                 cYb = worker.getMyYb()
