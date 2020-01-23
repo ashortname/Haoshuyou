@@ -97,8 +97,8 @@ if __name__ == '__main__':
                     EXIT_NORMAL = True
                     break
                 except Exception as exception:
-                    worker.log("An error occured when working!!! " + exception.__str__())
-                    worker.log("\nNow try to login again after 60 seconds...")
+                    worker.log("An error occured when working!!!  exception: " + exception.__str__())
+                    worker.log("Now try to login again after 60 seconds...")
                     time.sleep(60)
                     worker.log('try login...')
                     worker.login(worker.UserName, worker.PassWord)

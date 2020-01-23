@@ -1,6 +1,9 @@
 @echo off
 echo.
-title masterOO
+set /p account=请输入用户名：
+set /p passwd=请输入密码：
+cls
+title %account%
 echo 程序开始...
-python work.py username password workMode(0/1)
+python work.py %account% %passwd% 0
 pause
