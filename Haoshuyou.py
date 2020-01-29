@@ -43,6 +43,7 @@ class Haoshuyou:
     def __init__(self):
         self.Menu = None
         self.session = None
+        self.Ybcount = 0
 
     # 获取http头
     def __getHeader(self):
@@ -94,7 +95,7 @@ class Haoshuyou:
                 'quickforward': 'yes',
                 'handlekey': 'ls'
             }
-            with self.session.post(url=loginUrl, headers=self.__getHeader(), data=postData, timeout=30) as response:
+            with self.session.post(url=loginUrl, headers=self.__getHeader(), data=postData, timeout=8) as response:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 fh = bs_obj.find('a', {'href': re.compile("member*")})
@@ -114,7 +115,7 @@ class Haoshuyou:
     def logout(self):
         try:
             url = "http://www.93haoshu.com/member.php?mod=logging&action=logout&formhash={0}".format(self.formHash)
-            with self.session.get(url=url, headers=self.__getHeader(), timeout=30) as response:
+            with self.session.get(url=url, headers=self.__getHeader(), timeout=8) as response:
                 response.encoding = 'gbk'
                 self.log("退出登录...")
         except Exception as exception:
@@ -125,7 +126,7 @@ class Haoshuyou:
     """
     def getMenu(self, pageUrl):
         try:
-            with self.session.get(url=pageUrl, headers=self.__getHeader(), timeout=30) as response:
+            with self.session.get(url=pageUrl, headers=self.__getHeader(), timeout=8) as response:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 plists = bs_obj.find_all('tbody', {'id': re.compile("normalthread_*")})
@@ -171,7 +172,7 @@ class Haoshuyou:
     """
     def sendResponse(self, rUrl, message, tid):
         try:
-            with self.session.post(url=rUrl, data=message, headers=self.buildHeader(tid), timeout=30) as response:
+            with self.session.post(url=rUrl, data=message, headers=self.buildHeader(tid), timeout=8) as response:
                 response.encoding = 'gbk'
                 return response.text
             time.sleep(1)
@@ -184,6 +185,9 @@ class Haoshuyou:
             return False, rCodes.CODE_ReplyReachLimit
         elif responseText.__contains__('回复发布成功'):
             return True, rCodes.CODE_ReplySuccess
+        #	临时的论坛错误
+        #elif responseText.__contains__('40001'):
+        #    return True, rCodes.CODE_ReplySuccess
         else:
             return False, rCodes.CODE_ReplyFailedAnyway
 
@@ -206,7 +210,7 @@ class Haoshuyou:
     ##  进入页面
     """
     def enterUrl(self, url, refer):
-        with self.session.get(url=url, headers=self.buildHeader2(refer), timeout=30) as response:
+        with self.session.get(url=url, headers=self.buildHeader2(refer), timeout=8) as response:
             response.encoding = 'gbk'
             self.log("Enter page...")
         time.sleep(3)
@@ -280,7 +284,7 @@ class Haoshuyou:
     def getMyYb(self):
         try:
             url = "http://www.93haoshu.com/home.php?mod=spacecp&ac=credit&showcredit=1&inajax=1&ajaxtarget=extcreditmenu_menu"
-            with self.session.get(url=url, headers=self.__getHeader(), timeout=30) as response:
+            with self.session.get(url=url, headers=self.__getHeader(), timeout=8) as response:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'lxml')
                 return int(bs_obj.find('span', {'id': 'hcredit_2'}).get_text()[0:-1])
