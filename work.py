@@ -10,10 +10,10 @@ from requests import RequestException
 
 def getRandTime(Mode):
     if Mode == 1:
-        otime = 120
+        otime = 175
     else:
         otime = 30
-    ext = random.randint(60, 90)
+    ext = random.randint(3, 5)
     return otime + ext
 
 
@@ -69,8 +69,8 @@ if __name__ == '__main__':
                     worker.log("Reply : {0}".format(replyResult))
                     #   可能是 session 失效了，尝试重新登陆
                     if (replyResult is not True) and replyCode == rCodes.CODE_ReplyFailedAnyway:
-                        worker.log("回复失败， 1 分钟后尝试重新登陆!!! ")
-                        time.sleep(60)
+                        worker.log("回复失败， 10 秒后尝试重新登陆!!! \n")
+                        time.sleep(10)
                         worker.logout()
                         worker.login(worker.UserName, worker.PassWord)
                         continue
@@ -82,7 +82,7 @@ if __name__ == '__main__':
                     if (page not in worker.lastVisited) and (page not in worker.visited):
                         worker.visited.append(page.tid)
 	    
-                    time.sleep(3)
+                    time.sleep(1)
                     cYb = worker.getMyYb()
                     different = cYb - worker.currentYb
                     worker.Ybcount += different
@@ -93,21 +93,21 @@ if __name__ == '__main__':
                     #   等待至少3分钟
                     time.sleep(getRandTime(workMode))
                 except KeyboardInterrupt as kex:
-                    worker.log('KeyboardInterrupt detected...\n')
+                    worker.log('检测到中断信，程序退出...\n')
                     EXIT_NORMAL = True
                     break
                 except Exception as exception:
-                    worker.log("An error occured when working!!!  exception: " + exception.__str__())
-                    worker.log("Now try to login again after 60 seconds...")
-                    time.sleep(60)
+                    worker.log("工作中出现错误!!!  exception: " + exception.__str__())
+                    worker.log("10 秒后尝试重新登陆...\n")
+                    time.sleep(10)
                     worker.log('try login...')
                     worker.login(worker.UserName, worker.PassWord)
                     continue
         except Exception as exception:
-            worker.log("An error occurred before working!!! " + exception.__str__())
+            worker.log("初始化错误!!! " + exception.__str__())
             continue
         except RequestException as reException:
-            worker.log('A RequestException detected, now retry...' + reException.__str__())
+            worker.log('访问错误，尝试重启程序...' + reException.__str__())
             continue
         finally:
             #   写入当次访问记录
@@ -124,8 +124,8 @@ if __name__ == '__main__':
             if EXIT_NORMAL is True:
                 break
             #   检测到不可自愈错误，1分钟后再试
-            worker.log('\n未处理错误，1分钟后重试！！！\n')
-            time.sleep(60)
+            worker.log('\n未处理错误，30 秒后重试！！！\n')
+            time.sleep(30)
             worker.log('现在开始重新执行任务...\n')
-            time.sleep(3)
+            time.sleep(1)
     print('\n程序退出...\n')

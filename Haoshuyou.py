@@ -104,7 +104,7 @@ class Haoshuyou:
                 #   获取银币数目
                 self.currentYb = self.getMyYb()                
                 self.log("Login success...\n\n")
-            time.sleep(3)
+            time.sleep(1)
         except Exception as exception:
             self.log("Login failed!!! exception : " + exception.__str__())
             raise Exception("登陆出错！！！")
@@ -213,7 +213,7 @@ class Haoshuyou:
         with self.session.get(url=url, headers=self.buildHeader2(refer), timeout=8) as response:
             response.encoding = 'gbk'
             self.log("Enter page...")
-        time.sleep(3)
+        time.sleep(1)
 
     """
     ##  获取要回复的信息
@@ -238,7 +238,7 @@ class Haoshuyou:
             with open("Log/{0}/visited".format(self.UserName), "a+") as visitFile:
                 for line in visitFile.readlines():
                     self.lastVisited.append(line)
-            time.sleep(2)
+            time.sleep(1)
         except Exception as exception:
             self.log("读取访问记录出错！！！")
 
@@ -250,7 +250,7 @@ class Haoshuyou:
                 for item in self.visited:
                     visitFile.write(item + "\n")
                     visitFile.flush()
-            time.sleep(2)
+            time.sleep(1)
             self.log('记录录入完毕...')
         except Exception as exception:
             self.log("写入访问记录出错！！！")
@@ -288,6 +288,6 @@ class Haoshuyou:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'lxml')
                 return int(bs_obj.find('span', {'id': 'hcredit_2'}).get_text()[0:-1])
-            time.sleep(2)
+            time.sleep(1)
         except Exception as exception:
             raise Exception("获取银币数目出错！！！")
