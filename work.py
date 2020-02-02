@@ -1,5 +1,6 @@
 from Haoshuyou import Haoshuyou
 from ResultCode.ReplyCodes import ReplyCodes as rCodes
+import Tools
 import time
 import random
 import datetime
@@ -10,10 +11,10 @@ from requests import RequestException
 
 def getRandTime(Mode):
     if Mode == 1:
-        otime = 175
+        otime = 120
     else:
         otime = 30
-    ext = random.randint(3, 5)
+    ext = random.randint(70, 90)
     return otime + ext
 
 
@@ -25,12 +26,32 @@ if __name__ == '__main__':
     if len(sys.argv) is not 4:
         print("参数有误，退出！！！\n")
         sys.exit()
+    #   从命令行获取参数
     worker.UserName = str(sys.argv[1]).strip()
     worker.PassWord = str(sys.argv[2]).strip()
     workMode = int(sys.argv[3])
     #  检测用户目录
     if os.path.exists("Log/{0}".format(worker.UserName)) is not True:
         os.makedirs("Log/{0}".format(worker.UserName))
+    #   初始化银币数目
+    worker.Ybcount = 0
+    #   设置超时时间
+    worker.httpTimeOut = 20
+    #   尝试加载用户回复，加载失败则启用默认配置
+    try:
+        tMsgs = Tools.getMessages()
+        worker.messages = tMsgs
+    except Exception as exception:
+        worker.log('加载用户回复失败，启用默认设置！！！')
+    #   尝试加载回复板块，加载失败则启用默认配置
+    try:
+        tSecs = Tools.getSections()
+        worker.Sections = tSecs
+    except Exception as exception:
+        worker.log('加载回复板块失败，启用默认设置！！！')
+    '''
+    ##  正式的工作
+    '''
     while True:
         try:
             # 开始时间
@@ -69,8 +90,8 @@ if __name__ == '__main__':
                     worker.log("Reply : {0}".format(replyResult))
                     #   可能是 session 失效了，尝试重新登陆
                     if (replyResult is not True) and replyCode == rCodes.CODE_ReplyFailedAnyway:
-                        worker.log("回复失败， 10 秒后尝试重新登陆!!! \n")
-                        time.sleep(10)
+                        worker.log("回复失败， 5 秒后尝试重新登陆!!! \n")
+                        time.sleep(5)
                         worker.logout()
                         worker.login(worker.UserName, worker.PassWord)
                         continue
@@ -98,8 +119,8 @@ if __name__ == '__main__':
                     break
                 except Exception as exception:
                     worker.log("工作中出现错误!!!  exception: " + exception.__str__())
-                    worker.log("10 秒后尝试重新登陆...\n")
-                    time.sleep(10)
+                    worker.log("5 秒后尝试重新登陆...\n")
+                    time.sleep(5)
                     worker.log('try login...')
                     worker.login(worker.UserName, worker.PassWord)
                     continue
@@ -124,8 +145,8 @@ if __name__ == '__main__':
             if EXIT_NORMAL is True:
                 break
             #   检测到不可自愈错误，1分钟后再试
-            worker.log('\n未处理错误，30 秒后重试！！！\n')
-            time.sleep(30)
+            worker.log('未处理错误，3 秒后重试！！！\n')
+            time.sleep(3)
             worker.log('现在开始重新执行任务...\n')
             time.sleep(1)
     print('\n程序退出...\n')

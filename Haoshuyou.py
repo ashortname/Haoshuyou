@@ -18,6 +18,7 @@ class Haoshuyou:
     fid = None
     starTime = None
     endTime = None
+    httpTimeOut = int(15)
     logFileName = ''
     logFilePath = ''
     UserName = ''
@@ -35,15 +36,28 @@ class Haoshuyou:
                 "感谢楼主分享~",
                 "[color=blue]支持一下楼主[/color]",
                 "进来看看，支持一下楼主"]
-    plates = ["http://www.93haoshu.com/forum-2-1.html",
-              "http://www.93haoshu.com/forum-72-1.html",
-              "http://www.93haoshu.com/forum-56-1.html"]
-    plateNames = ["同人小说", "全本小说", "常规小说"]
+    # plates = ["http://www.93haoshu.com/forum-2-1.html",
+    #           "http://www.93haoshu.com/forum-72-1.html",
+    #           "http://www.93haoshu.com/forum-56-1.html"]
+    # plateNames = ["同人小说", "全本小说", "常规小说"]
+    Sections = [
+        {
+            "secName": "同人小说",
+            "secUrl": "http://www.93haoshu.com/forum-2-1.html"
+        },
+        {
+            "secName": "全本小说",
+            "secUrl": "http://www.93haoshu.com/forum-72-1.html"
+        },
+        {
+            "secName": "常规小说",
+            "secUrl": "http://www.93haoshu.com/forum-56-1.html"
+        }
+    ]
 
     def __init__(self):
         self.Menu = None
         self.session = None
-        self.Ybcount = 0
 
     # 获取http头
     def __getHeader(self):
@@ -95,7 +109,7 @@ class Haoshuyou:
                 'quickforward': 'yes',
                 'handlekey': 'ls'
             }
-            with self.session.post(url=loginUrl, headers=self.__getHeader(), data=postData, timeout=8) as response:
+            with self.session.post(url=loginUrl, headers=self.__getHeader(), data=postData, timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 fh = bs_obj.find('a', {'href': re.compile("member*")})
@@ -115,7 +129,7 @@ class Haoshuyou:
     def logout(self):
         try:
             url = "http://www.93haoshu.com/member.php?mod=logging&action=logout&formhash={0}".format(self.formHash)
-            with self.session.get(url=url, headers=self.__getHeader(), timeout=8) as response:
+            with self.session.get(url=url, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
                 self.log("退出登录...")
         except Exception as exception:
@@ -126,7 +140,7 @@ class Haoshuyou:
     """
     def getMenu(self, pageUrl):
         try:
-            with self.session.get(url=pageUrl, headers=self.__getHeader(), timeout=8) as response:
+            with self.session.get(url=pageUrl, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 plists = bs_obj.find_all('tbody', {'id': re.compile("normalthread_*")})
@@ -172,7 +186,7 @@ class Haoshuyou:
     """
     def sendResponse(self, rUrl, message, tid):
         try:
-            with self.session.post(url=rUrl, data=message, headers=self.buildHeader(tid), timeout=8) as response:
+            with self.session.post(url=rUrl, data=message, headers=self.buildHeader(tid), timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
                 return response.text
             time.sleep(1)
@@ -210,7 +224,7 @@ class Haoshuyou:
     ##  进入页面
     """
     def enterUrl(self, url, refer):
-        with self.session.get(url=url, headers=self.buildHeader2(refer), timeout=8) as response:
+        with self.session.get(url=url, headers=self.buildHeader2(refer), timeout=self.httpTimeOut) as response:
             response.encoding = 'gbk'
             self.log("Enter page...")
         time.sleep(1)
@@ -226,9 +240,9 @@ class Haoshuyou:
     ##  获取要回复的板块
     """
     def getPlate(self):
-        index = random.randint(0, len(self.plates) - 1)
-        self.log("此次回复板块：" + self.plateNames[index])
-        return self.plates[index]
+        index = random.randint(0, len(self.Sections) - 1)
+        self.log("此次回复板块：" + self.Sections[index].name)
+        return self.Sections[index].url
 
     # 用于记录已经访问过的帖子 -- 加载
     def loadLastVisited(self):
@@ -284,7 +298,7 @@ class Haoshuyou:
     def getMyYb(self):
         try:
             url = "http://www.93haoshu.com/home.php?mod=spacecp&ac=credit&showcredit=1&inajax=1&ajaxtarget=extcreditmenu_menu"
-            with self.session.get(url=url, headers=self.__getHeader(), timeout=8) as response:
+            with self.session.get(url=url, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'lxml')
                 return int(bs_obj.find('span', {'id': 'hcredit_2'}).get_text()[0:-1])
