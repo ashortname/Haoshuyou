@@ -18,6 +18,7 @@ class Haoshuyou:
     fid = None
     starTime = None
     endTime = None
+    awardStatus = True
     httpTimeOut = int(15)
     logFileName = ''
     logFilePath = ''
@@ -226,8 +227,21 @@ class Haoshuyou:
     def enterUrl(self, url, refer):
         with self.session.get(url=url, headers=self.buildHeader2(refer), timeout=self.httpTimeOut) as response:
             response.encoding = 'gbk'
+            bs_obj = BeautifulSoup(response.text, 'lxml')
             self.log("Enter page...")
-        time.sleep(1)
+            #   获取在线任务状态
+            if self.awardStatus is True:
+                aurl = 'http://www.93haoshu.com/plugin.php?id=gonline:index&action=award&formhash={0}'.format(
+                        self.formHash)
+                try:
+                    time.sleep(1)
+                    with self.session.get(url=aurl, headers=self.__getHeader(), timeout=5) as aresponse:
+                        aresponse.encoding = 'gbk'
+                        if aresponse.text is '':
+                            self.awardStatus = False
+                except:
+                    pass
+            time.sleep(1)
 
     """
     ##  获取要回复的信息
@@ -293,7 +307,7 @@ class Haoshuyou:
         return replyPage  # 如果都已经回复过了，则直接回复第一个
 
     """
-    ##  获取银币数目
+    ##  获取银币数目，领取在线奖励
     """
     def getMyYb(self):
         try:

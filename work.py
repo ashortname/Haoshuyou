@@ -18,11 +18,13 @@ def getRandTime(Mode):
     return otime + ext
 
 
+#	退出信号
 EXIT_NORMAL = False
 if __name__ == '__main__':
     worker = Haoshuyou()
     #   工作模式，决定回帖间隔
     workMode = 1
+    #	判断参数合法性
     if len(sys.argv) is not 4:
         print("参数有误，退出！！！\n")
         sys.exit()
@@ -40,12 +42,16 @@ if __name__ == '__main__':
     #   尝试加载用户回复，加载失败则启用默认配置
     try:
         tMsgs = Tools.getMessages()
+        if len(tMsgs) == 0:
+            raise Exception('ContentEmpty!')  
         worker.messages = tMsgs
     except Exception as exception:
         worker.log('加载用户回复失败，启用默认设置！！！')
     #   尝试加载回复板块，加载失败则启用默认配置
     try:
         tSecs = Tools.getSections()
+        if len(tSecs) == 0:
+            raise Exception('ContentEmpty!')
         worker.Sections = tSecs
     except Exception as exception:
         worker.log('加载回复板块失败，启用默认设置！！！')
@@ -145,8 +151,8 @@ if __name__ == '__main__':
             if EXIT_NORMAL is True:
                 break
             #   检测到不可自愈错误，1分钟后再试
-            worker.log('未处理错误，3 秒后重试！！！\n')
+            print('未处理错误，3 秒后重试！！！\n')
             time.sleep(3)
-            worker.log('现在开始重新执行任务...\n')
+            print('现在开始重新执行任务...\n')
             time.sleep(1)
     print('\n程序退出...\n')
