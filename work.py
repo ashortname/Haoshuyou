@@ -55,20 +55,22 @@ if __name__ == '__main__':
         worker.Sections = tSecs
     except Exception as exception:
         worker.log('加载回复板块失败，启用默认设置！！！')
+    # 开始时间
+    worker.starTime = datetime.datetime.now()
+    # 日志名时间戳和路径
+    worker.logFileName = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())
+    worker.logFilePath = "Log/{0}/{1}".format(worker.UserName, worker.logFileName)
     '''
     ##  正式的工作
     '''
     while True:
         try:
-            # 开始时间
-            worker.starTime = datetime.datetime.now()
-            # 日志名时间戳和路径
-            worker.logFileName = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())
-            worker.logFilePath = "Log/{0}/{1}".format(worker.UserName, worker.logFileName)
             # 加载已访问帖子目录
             worker.loadLastVisited()
             # 登陆
+            worker.log('正在登录...')
             worker.login(worker.UserName, worker.PassWord)
+            time.sleep(5)
             # 工作
             while True:
                 try:
@@ -92,11 +94,12 @@ if __name__ == '__main__':
                         'subject': '  '
                     }
                     responseText = worker.sendResponse(sendUrl, sendData, page.tid)
-                    replyResult, replyCode = worker.isReplySuccess(responseText)
+                    replyResult, replyCode, replyResponse = worker.isReplySuccess(responseText)
                     worker.log("Reply : {0}".format(replyResult))
                     #   可能是 session 失效了，尝试重新登陆
                     if (replyResult is not True) and replyCode == rCodes.CODE_ReplyFailedAnyway:
                         worker.log("回复失败， 5 秒后尝试重新登陆!!! \n")
+                        worker.log(replyResponse)
                         time.sleep(5)
                         worker.logout()
                         worker.login(worker.UserName, worker.PassWord)
@@ -108,7 +111,7 @@ if __name__ == '__main__':
                     #   回帖成功，存入记录
                     if (page not in worker.lastVisited) and (page not in worker.visited):
                         worker.visited.append(page.tid)
-	    
+
                     time.sleep(1)
                     cYb = worker.getMyYb()
                     different = cYb - worker.currentYb
@@ -126,6 +129,7 @@ if __name__ == '__main__':
                 except Exception as exception:
                     worker.log("工作中出现错误!!!  exception: " + exception.__str__())
                     worker.log("5 秒后尝试重新登陆...\n")
+                    worker.logout()
                     time.sleep(5)
                     worker.log('try login...')
                     worker.login(worker.UserName, worker.PassWord)
@@ -151,8 +155,8 @@ if __name__ == '__main__':
             if EXIT_NORMAL is True:
                 break
             #   检测到不可自愈错误，1分钟后再试
-            print('未处理错误，3 秒后重试！！！\n')
-            time.sleep(3)
+            print('未处理错误，10 秒后重试！！！\n')
+            time.sleep(9)
             print('现在开始重新执行任务...\n')
             time.sleep(1)
     print('\n程序退出...\n')

@@ -12,22 +12,41 @@ from ResultCode.ReplyCodes import ReplyCodes as rCodes
 
 
 class Haoshuyou:
+    #   保存cookie
     cooKie = None
+    #   保存会话
     session = None
+    #   formhash凭证
     formHash = None
+    #   回帖id吧
     fid = None
+    #   记录程序运行时间
     starTime = None
     endTime = None
+    #   用来辅助在线任务
     awardStatus = True
+    asCount = int(0)
+    #   全局超时时间
     httpTimeOut = int(15)
+    #   用户日志文件名和路径
     logFileName = ''
     logFilePath = ''
+    #   用户名和密码
     UserName = ''
     PassWord = ''
+    spaceUrl = ''
+    #   当前银币
     currentYb = int(0)
+    #   本次运行获取到的银币
     Ybcount = int(0)
+    #   记录本次运行访问过的帖子
     visited = list()
+    #   访问历史记录
     lastVisited = list()
+
+    """
+    ##  内置的默认值
+    """
     messages = ["[color=Red]楼主发贴辛苦了，谢谢楼主分享！[/color]我觉得[color=blue]好书友论坛[/color]是注册对了！",
                 "楼主太厉害了！楼主，我觉得[color=blue]好书友[/color]真是个好地方！",
                 "这个帖子不回对不起自己！我想我是一天也不能离开[color=blue]好书友[/color]。",
@@ -56,6 +75,9 @@ class Haoshuyou:
         }
     ]
 
+    """
+    ##  初始化
+    """
     def __init__(self):
         self.Menu = None
         self.session = None
@@ -114,14 +136,18 @@ class Haoshuyou:
                 response.encoding = 'gbk'
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 fh = bs_obj.find('a', {'href': re.compile("member*")})
+                self.spaceUrl = bs_obj.find('strong', {'class': 'vwmy'}).a['href']
                 self.formHash = fh['href'][-1:-9:-1][::-1]
                 self.cooKie = self.session.cookies
                 #   获取银币数目
-                self.currentYb = self.getMyYb()                
-                self.log("Login success...\n\n")
+                time.sleep(5)
+                self.log('获取初始银币...')
+                self.currentYb = self.getMyYb()
+                self.log('登陆成功，等待跳转...\n\n')
             time.sleep(1)
         except Exception as exception:
             self.log("Login failed!!! exception : " + exception.__str__())
+            print(response.text)
             raise Exception("登陆出错！！！")
 
     """
@@ -165,6 +191,7 @@ class Haoshuyou:
                 time.sleep(1)
         except Exception as exception:
             self.log("getMenu failed!!! exception : " + exception.__str__())
+            print(response.text)
             raise Exception("获取板块错误！！！")
 
     #   获取另一个http头
@@ -197,14 +224,11 @@ class Haoshuyou:
     #   判断是否回复成功
     def isReplySuccess(self, responseText):
         if responseText.__contains__('每小时限制'):
-            return False, rCodes.CODE_ReplyReachLimit
+            return False, rCodes.CODE_ReplyReachLimit, responseText
         elif responseText.__contains__('回复发布成功'):
-            return True, rCodes.CODE_ReplySuccess
-        #	临时的论坛错误
-        #elif responseText.__contains__('40001'):
-        #    return True, rCodes.CODE_ReplySuccess
+            return True, rCodes.CODE_ReplySuccess, ''
         else:
-            return False, rCodes.CODE_ReplyFailedAnyway
+            return False, rCodes.CODE_ReplyFailedAnyway, responseText
 
     #   这也是回复头
     def buildHeader2(self, url):
@@ -231,16 +255,20 @@ class Haoshuyou:
             self.log("Enter page...")
             #   获取在线任务状态
             if self.awardStatus is True:
-                aurl = 'http://www.93haoshu.com/plugin.php?id=gonline:index&action=award&formhash={0}'.format(
-                        self.formHash)
-                try:
-                    time.sleep(1)
-                    with self.session.get(url=aurl, headers=self.__getHeader(), timeout=5) as aresponse:
-                        aresponse.encoding = 'gbk'
-                        if aresponse.text is '':
-                            self.awardStatus = False
-                except:
-                    pass
+                self.asCount = self.asCount - 1
+                if self.asCount <= 0:
+                    aurl = 'http://www.93haoshu.com/plugin.php?id=gonline:index&action=award&formhash={0}'.format(
+                            self.formHash)
+                    try:
+                        time.sleep(1)
+                        with self.session.get(url=aurl, headers=self.__getHeader(), timeout=5) as aresponse:
+                            aresponse.encoding = 'gbk'
+                            if aresponse.text is '':
+                                self.awardStatus = False
+                            self.log("在线任务探测：" + aresponse.text + " <-")
+                        self.asCount = 5 + random.randint(1, 3)
+                    except:
+                        pass
             time.sleep(1)
 
     """
@@ -310,12 +338,19 @@ class Haoshuyou:
     ##  获取银币数目，领取在线奖励
     """
     def getMyYb(self):
-        try:
-            url = "http://www.93haoshu.com/home.php?mod=spacecp&ac=credit&showcredit=1&inajax=1&ajaxtarget=extcreditmenu_menu"
-            with self.session.get(url=url, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
-                response.encoding = 'gbk'
-                bs_obj = BeautifulSoup(response.text, 'lxml')
-                return int(bs_obj.find('span', {'id': 'hcredit_2'}).get_text()[0:-1])
-            time.sleep(1)
-        except Exception as exception:
-            raise Exception("获取银币数目出错！！！")
+        tryCount = 0
+        while True:
+            try:
+                with self.session.get(url=self.spaceUrl, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
+                    response.encoding = 'gbk'
+                    bs_obj = BeautifulSoup(response.text, 'lxml')
+                    tdiv = bs_obj.find('div', {'id': 'psts', 'class': 'cl'})
+                    #   'xxxx 枚'
+                    tulli_yb = str(tdiv.ul.contents[6].contents[1])[0:-2]
+                    return int(tulli_yb)
+            except Exception as exception:
+                tryCount = tryCount + 1
+                self.log("Get yb failed!!! exception : " + exception.__str__())
+                self.log("Retry...")
+                if tryCount == 3:
+                    break
