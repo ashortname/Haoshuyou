@@ -1,27 +1,22 @@
-from Haoshuyou import Haoshuyou
-from ResultCode.ReplyCodes import ReplyCodes as rCodes
 import Tools
 import time
-import random
 import datetime
 import sys
 import os
+import _thread
 from requests import RequestException
+from Haoshuyou import Haoshuyou
+from ResultCode.ReplyCodes import ReplyCodes as rCodes
 
 
-def getRandTime(Mode):
-    if Mode == 1:
-        otime = 120
-    else:
-        otime = 30
-    ext = random.randint(70, 90)
-    return otime + ext
-
-
-#	退出信号
+#   退出信号
 EXIT_NORMAL = False
 if __name__ == '__main__':
     worker = Haoshuyou()
+    #   显示
+    # global gTime, day
+    # gTime = int(0)
+    # day = int(0)
     #   工作模式，决定回帖间隔
     workMode = 1
     #	判断参数合法性
@@ -40,26 +35,20 @@ if __name__ == '__main__':
     #   设置超时时间
     worker.httpTimeOut = 20
     #   尝试加载用户回复，加载失败则启用默认配置
-    try:
-        tMsgs = Tools.getMessages()
-        if len(tMsgs) == 0:
-            raise Exception('ContentEmpty!')  
-        worker.messages = tMsgs
-    except Exception as exception:
-        worker.log('加载用户回复失败，启用默认设置！！！')
+    worker.messages = Tools.getMessages()
     #   尝试加载回复板块，加载失败则启用默认配置
-    try:
-        tSecs = Tools.getSections()
-        if len(tSecs) == 0:
-            raise Exception('ContentEmpty!')
-        worker.Sections = tSecs
-    except Exception as exception:
-        worker.log('加载回复板块失败，启用默认设置！！！')
+    worker.Sections = Tools.getSections()
     # 开始时间
     worker.starTime = datetime.datetime.now()
     # 日志名时间戳和路径
     worker.logFileName = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())
     worker.logFilePath = "Log/{0}/{1}".format(worker.UserName, worker.logFileName)
+    '''
+    ##  计算运行时间
+    '''
+    Tools.gTime = int(0)
+    Tools.day = int(0)
+    _thread.start_new_thread(Tools.doShowTime, (worker.UserName, ))
     '''
     ##  正式的工作
     '''
@@ -111,19 +100,22 @@ if __name__ == '__main__':
                     #   回帖成功，存入记录
                     if (page not in worker.lastVisited) and (page not in worker.visited):
                         worker.visited.append(page.tid)
+                    #   回帖数加一
+                    worker.postCount = worker.postCount + 1
 
                     time.sleep(1)
+                    #   计算银币
                     cYb = worker.getMyYb()
                     different = cYb - worker.currentYb
                     worker.Ybcount += different
                     worker.currentYb = cYb
-                    worker.log("当前银币： {0} 枚, 本次回复得到银币： {1} 枚, 当前总共获得： {2} 枚\n".format(
-                        worker.currentYb, different, worker.Ybcount
+                    worker.log("当前银币： {0} 枚, 当前回帖： {1} 帖， 本次回复得到银币： {2} 枚, 当前总共获得： {3} 枚\n".format(
+                        worker.currentYb, worker.postCount, different, worker.Ybcount
                     ))
                     #   等待至少3分钟
-                    time.sleep(getRandTime(workMode))
+                    time.sleep(Tools.getRandTime(workMode))
                 except KeyboardInterrupt as kex:
-                    worker.log('检测到中断信，程序退出...\n')
+                    worker.log('检测到中断信号，程序退出...\n')
                     EXIT_NORMAL = True
                     break
                 except Exception as exception:
@@ -135,22 +127,26 @@ if __name__ == '__main__':
                     worker.login(worker.UserName, worker.PassWord)
                     continue
         except Exception as exception:
+            #   抛出的登录失败
+            if '失败' in exception.__str__():
+                EXIT_NORMAL = True
+                break
             worker.log("初始化错误!!! " + exception.__str__())
             continue
         except RequestException as reException:
             worker.log('访问错误，尝试重启程序...' + reException.__str__())
             continue
         finally:
-            #   写入当次访问记录
-            worker.writeVisited()
             #   计算运行时间
             worker.endTime = datetime.datetime.now()
             runTime = worker.endTime - worker.starTime
             worker.log("当次运行总共耗时： {0}， 共回复： {1} 帖， 总计获得银币： {2} 枚\n--------------------------------------------------------------\n\n".format(
-                runTime,  len(worker.visited), worker.Ybcount
+                runTime,  worker.postCount, worker.Ybcount
             ))
             #   登出
             worker.logout()
+            #   写入当次访问记录
+            worker.writeVisited()
             #   如果正常退出
             if EXIT_NORMAL is True:
                 break

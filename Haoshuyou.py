@@ -10,7 +10,6 @@ from PageModel.MenuPageModel import MenuPage
 from PageModel.PageItem import PageItem
 from ResultCode.ReplyCodes import ReplyCodes as rCodes
 
-
 class Haoshuyou:
     #   保存cookie
     cooKie = None
@@ -36,44 +35,19 @@ class Haoshuyou:
     PassWord = ''
     spaceUrl = ''
     #   当前银币
-    currentYb = int(0)
+    currentYb = None
     #   本次运行获取到的银币
     Ybcount = int(0)
+    #   本次共回复的贴子数
+    postCount = int(0)
     #   记录本次运行访问过的帖子
     visited = list()
     #   访问历史记录
     lastVisited = list()
-
-    """
-    ##  内置的默认值
-    """
-    messages = ["[color=Red]楼主发贴辛苦了，谢谢楼主分享！[/color]我觉得[color=blue]好书友论坛[/color]是注册对了！",
-                "楼主太厉害了！楼主，我觉得[color=blue]好书友[/color]真是个好地方！",
-                "这个帖子不回对不起自己！我想我是一天也不能离开[color=blue]好书友[/color]。",
-                "我看不错噢 谢谢楼主！[color=blue]好书友[/color]越来越好！",
-                "论坛不能没有像楼主这样的人才啊！我会一直支持[color=blue]好书友[/color]。",
-                "既然你诚信诚意的推荐了，那我就勉为其难的看看吧！[color=blue]好书友[/color]不走平凡路。",
-                "感谢楼主分享~",
-                "[color=blue]支持一下楼主[/color]",
-                "进来看看，支持一下楼主"]
-    # plates = ["http://www.93haoshu.com/forum-2-1.html",
-    #           "http://www.93haoshu.com/forum-72-1.html",
-    #           "http://www.93haoshu.com/forum-56-1.html"]
-    # plateNames = ["同人小说", "全本小说", "常规小说"]
-    Sections = [
-        {
-            "secName": "同人小说",
-            "secUrl": "http://www.93haoshu.com/forum-2-1.html"
-        },
-        {
-            "secName": "全本小说",
-            "secUrl": "http://www.93haoshu.com/forum-72-1.html"
-        },
-        {
-            "secName": "常规小说",
-            "secUrl": "http://www.93haoshu.com/forum-56-1.html"
-        }
-    ]
+    #   回复的消息
+    messages = []
+    #   回复的版块
+    Sections = []
 
     """
     ##  初始化
@@ -121,6 +95,7 @@ class Haoshuyou:
     ##  登陆论坛，获取 cookies 和 session
     """
     def login(self, acc, passwd):
+        ifLoginFail = ''
         try:
             self.session = requests.session()
             loginUrl = 'http://www.93haoshu.com/member.php?mod=logging&action=login&loginsubmit=yes&infloat=yes&lssubmit=yes'
@@ -134,21 +109,38 @@ class Haoshuyou:
             }
             with self.session.post(url=loginUrl, headers=self.__getHeader(), data=postData, timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
+                ifLoginFail = response.text
+                #   验证
+                if self.verified(response):
+                    self.login(acc, passwd)
+                    return
+                #   检查登陆结果
+                if not self.isLoginSuccess(ifLoginFail):
+                    raise Exception("登陆失败，请检查用户名或密码！！！")
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 fh = bs_obj.find('a', {'href': re.compile("member*")})
                 self.spaceUrl = bs_obj.find('strong', {'class': 'vwmy'}).a['href']
                 self.formHash = fh['href'][-1:-9:-1][::-1]
                 self.cooKie = self.session.cookies
                 #   获取银币数目
-                time.sleep(5)
-                self.log('获取初始银币...')
-                self.currentYb = self.getMyYb()
+                time.sleep(3)
+                if self.currentYb is None:
+                    self.log('获取初始银币...')
+                    self.currentYb = self.getMyYb()
                 self.log('登陆成功，等待跳转...\n\n')
             time.sleep(1)
         except Exception as exception:
             self.log("Login failed!!! exception : " + exception.__str__())
-            print(response.text)
-            raise Exception("登陆出错！！！")
+            ##  self.log('登陆失败，文本内容：\n\n' + ifLoginFail + '\n\n')
+            raise exception
+
+    """
+    ##  判断登陆结果
+    """
+    def isLoginSuccess(self, resText):
+        if '登录失败，您还可以尝试' in resText:
+            return False
+        return True
 
     """
     ##  登出论坛
@@ -165,33 +157,57 @@ class Haoshuyou:
     """
     ##  进入主题页面，获取各个帖子的地址及信息
     """
-    def getMenu(self, pageUrl):
+    def getMenu(self, pageUrl, retries=-1):
         try:
+            # 检测重试次数
+            if retries >= 3:
+                raise Exception('板块获取次数过度...')
             with self.session.get(url=pageUrl, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
+                #   验证
+                if self.verified(response):
+                    self.getMenu(pageUrl)
+                    return
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 plists = bs_obj.find_all('tbody', {'id': re.compile("normalthread_*")})
+                #   获取到空或其他页面
+                if plists is None or len(plists) <= 0:
+                    response.close()
+                    self.log("\t>>> 重新获取板块内容...")
+                    time.sleep(1)
+                    self.getMenu(pageUrl, retries + 1)
                 # 获取fid
                 self.fid = bs_obj.find('input', {'name': 'srhfid'})['value']
                 # 每个plist，先清空菜单
                 self.Menu = MenuPage()
+                tCount_ForItem = int(0)
                 for item in plists:
-                    # print(plists[0].td.a['href'])  地址
-                    tds = item.find_all('td', {'class': 'by'})
-                    # print(tds[0].cite.a.get_text() + ' ' + tds[0].em.span.string + '\n') #creator
-                    # print(tds[1].cite.a.get_text() + ' ' + tds[1].em.span.string) #lastvisitor
-                    # num = plists[0].find('td', {'class': 'num'}).em.string
-                    temp = PageItem(item.td.a['href'], item.td.a['href'].split('-')[1],
-                                    tds[0].cite.a.get_text(), tds[0].em.span.string,
-                                    tds[1].cite.a.get_text(), tds[1].em.span.string,
-                                    item.find('td', {'class': 'num'}).em.string)
-                    self.Menu.pageItemsCount += 1
-                    self.Menu.pageList.append(temp)
+                    try:
+                        # print(plists[0].td.a['href'])  地址
+                        tds = item.find_all('td', {'class': 'by'})
+                        # print(tds[0].cite.a.get_text() + ' ' + tds[0].em.span.string + '\n') #creator
+                        # print(tds[1].cite.a.get_text() + ' ' + tds[1].em.span.string) #lastvisitor
+                        # num = plists[0].find('td', {'class': 'num'}).em.string
+                        temp = PageItem(item.td.a['href'], item.td.a['href'].split('-')[1],
+                                        tds[0].cite.a.get_text(), tds[0].em.span.string,
+                                        tds[1].cite.a.get_text(), tds[1].em.span.string,
+                                        item.find('td', {'class': 'num'}).em.string)
+                        self.Menu.pageItemsCount += 1
+                        self.Menu.pageList.append(temp)
+                    except Exception as exception2:
+                        self.log("\t!!! Failed parse for one item...")
+                        tCount_ForItem = tCount_ForItem + 1
+                        continue
+                #   如果没有一条解析成功
+                if tCount_ForItem >= len(plists):
+                    response.close()
+                    self.log("\t>>> 重新获取板块内容...")
+                    time.sleep(1)
+                    self.getMenu(pageUrl, retries + 1)
                 self.log("Menu loaded...")
                 time.sleep(1)
         except Exception as exception:
             self.log("getMenu failed!!! exception : " + exception.__str__())
-            print(response.text)
             raise Exception("获取板块错误！！！")
 
     #   获取另一个http头
@@ -216,6 +232,9 @@ class Haoshuyou:
         try:
             with self.session.post(url=rUrl, data=message, headers=self.buildHeader(tid), timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
+                #   验证
+                if self.verified(response):
+                    return self.sendResponse(rUrl, message, tid)
                 return response.text
             time.sleep(1)
         except Exception as exception:
@@ -224,6 +243,7 @@ class Haoshuyou:
     #   判断是否回复成功
     def isReplySuccess(self, responseText):
         if responseText.__contains__('每小时限制'):
+            print('回复限制：\n', responseText)
             return False, rCodes.CODE_ReplyReachLimit, responseText
         elif responseText.__contains__('回复发布成功'):
             return True, rCodes.CODE_ReplySuccess, ''
@@ -256,6 +276,7 @@ class Haoshuyou:
             #   获取在线任务状态
             if self.awardStatus is True:
                 self.asCount = self.asCount - 1
+                self.log('在线探测随机数：{0}'.format(self.asCount))
                 if self.asCount <= 0:
                     aurl = 'http://www.93haoshu.com/plugin.php?id=gonline:index&action=award&formhash={0}'.format(
                             self.formHash)
@@ -263,8 +284,13 @@ class Haoshuyou:
                         time.sleep(1)
                         with self.session.get(url=aurl, headers=self.__getHeader(), timeout=5) as aresponse:
                             aresponse.encoding = 'gbk'
-                            if aresponse.text is '':
+                            #   验证
+                            if self.verified(response):
+                                self.enterUrl(url, refer)
+                                return
+                            if (aresponse.text is '') or ('银币+20' in aresponse.text):
                                 self.awardStatus = False
+                                self.log('今日在线任务完成')
                             self.log("在线任务探测：" + aresponse.text + " <-")
                         self.asCount = 5 + random.randint(1, 3)
                     except:
@@ -289,6 +315,8 @@ class Haoshuyou:
     # 用于记录已经访问过的帖子 -- 加载
     def loadLastVisited(self):
         try:
+            #   清空
+            self.lastVisited.clear()
             self.log("---------------------------------------------\n")
             self.log('加载本地访问记录...')
             with open("Log/{0}/visited".format(self.UserName), "a+") as visitFile:
@@ -307,6 +335,8 @@ class Haoshuyou:
                     visitFile.write(item + "\n")
                     visitFile.flush()
             time.sleep(1)
+            #   清空
+            self.visited.clear()
             self.log('记录录入完毕...')
         except Exception as exception:
             self.log("写入访问记录出错！！！")
@@ -341,10 +371,19 @@ class Haoshuyou:
         tryCount = 0
         while True:
             try:
-                with self.session.get(url=self.spaceUrl, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
+                with requests.get(url=self.spaceUrl, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
                     response.encoding = 'gbk'
+                    #   验证
+                    if self.verified(response):
+                        return self.getMyYb()
                     bs_obj = BeautifulSoup(response.text, 'lxml')
                     tdiv = bs_obj.find('div', {'id': 'psts', 'class': 'cl'})
+                    ##   如果获取到空
+                    #if tdiv is None or tdiv is '':
+                    #    response.close()
+                    #    self.log("\t>>> 重新获取银币数...")
+                    #    time.sleep(1)
+                    #    return self.getMyYb()
                     #   'xxxx 枚'
                     tulli_yb = str(tdiv.ul.contents[6].contents[1])[0:-2]
                     return int(tulli_yb)
@@ -352,5 +391,20 @@ class Haoshuyou:
                 tryCount = tryCount + 1
                 self.log("Get yb failed!!! exception : " + exception.__str__())
                 self.log("Retry...")
+                time.sleep(5)
                 if tryCount == 3:
                     break
+
+    """
+    ##  验证
+    """
+    def verified(self, response):
+        if 'You have verified successfully' in response.text:
+            bs_obj = BeautifulSoup(response.text, 'lxml')
+            url = bs_obj.find('a')['href']
+            with self.session.get(url='http://www.93haoshu.com' + url, headers=self.__getHeader(), timeout=self.httpTimeOut) as aresponse:
+                self.log('verified...')
+                time.sleep(5)
+                response.close()
+                return True
+        return False
