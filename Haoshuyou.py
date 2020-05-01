@@ -64,8 +64,41 @@ class Haoshuyou:
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
             'Host': 'www.93haoshu.com',
-            'Origin': 'http: // www.93haoshu.com',
+            'Origin': 'http://www.93haoshu.com',
             'Referer': 'http://www.93haoshu.com/',
+            # 'Cookie': str(self.cooKie),
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+    #   获取另一个http头
+    def buildHeader(self, tid):
+        return {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+            'Accept-Encoding': 'gzip,deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Connection': 'keep-alive',
+            'Host': 'www.93haoshu.com',
+            'Origin': 'http://www.93haoshu.com',
+            'Referer': 'http://www.93haoshu.com/thread-{0}-1-1.html'.format(tid),
+            'Upgrade-Insecure-Requests': '1',
+            # 'Cookie': str(self.cooKie),
+            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+    #   这也是回复头
+    def buildHeader2(self, url):
+        return {
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip,deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Connection': 'keep-alive',
+            'Host': 'www.93haoshu.com',
+            'Origin': 'http://www.93haoshu.com',
+            'Referer': url,
+            # 'Cookie': str(self.cooKie),
             'Upgrade-Insecure-Requests': '1',
             'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -131,6 +164,39 @@ class Haoshuyou:
             time.sleep(1)
         except Exception as exception:
             self.log("Login failed!!! exception : " + exception.__str__())
+            ##  self.log('登陆失败，文本内容：\n\n' + ifLoginFail + '\n\n')
+            raise exception
+    """
+    # pasrseCookie
+    """
+    def parseCookie(self, cookie):
+        templ = str(cookie).split(';')
+        for i in templ:
+            kv = i.split('=')
+            self.session.cookies.set(kv[0], kv[1])
+
+    '''
+    # 通过设置cookie工作
+    '''
+    def tryWork(self):
+        ifLoginFail = ''
+        try:
+            self.session = requests.session()
+            self.parseCookie(self.cooKie)
+            with self.session.get(url="http://www.93haoshu.com/", headers=self.__getHeader(),
+                                   timeout=self.httpTimeOut) as response:
+                response.encoding = 'utf-8'
+                if response.text.__contains__('开启了 CC 防护'):
+                    raise Exception("Cookie 失败")
+                #   获取银币数目
+                time.sleep(3)
+                if self.currentYb is None:
+                    self.log('获取初始银币...')
+                    self.currentYb = self.getMyYb()
+                self.log('运行成功，等待跳转...\n\n')
+            time.sleep(1)
+        except Exception as exception:
+            self.log("Work failed!!! exception : " + exception.__str__())
             ##  self.log('登陆失败，文本内容：\n\n' + ifLoginFail + '\n\n')
             raise exception
 
@@ -210,20 +276,7 @@ class Haoshuyou:
             self.log("getMenu failed!!! exception : " + exception.__str__())
             raise Exception("获取板块错误！！！")
 
-    #   获取另一个http头
-    def buildHeader(self, tid):
-        return {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-            'Accept-Encoding': 'gzip,deflate',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Connection': 'keep-alive',
-            'Host': 'www.93haoshu.com',
-            'Origin': 'http://www.93haoshu.com',
-            'Referer': 'http://www.93haoshu.com/thread-{0}-1-1.html'.format(tid),
-            'Upgrade-Insecure-Requests': '1',
-            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
+
 
     """
     ##  进行回复
@@ -249,21 +302,6 @@ class Haoshuyou:
             return True, rCodes.CODE_ReplySuccess, ''
         else:
             return False, rCodes.CODE_ReplyFailedAnyway, responseText
-
-    #   这也是回复头
-    def buildHeader2(self, url):
-        return {
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip,deflate',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Connection': 'keep-alive',
-            'Host': 'www.93haoshu.com',
-            'Origin': 'http://www.93haoshu.com',
-            'Referer': url,
-            'Upgrade-Insecure-Requests': '1',
-            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
 
     """
     ##  进入页面

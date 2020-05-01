@@ -2,6 +2,7 @@ import json
 import os
 import time
 import random
+import platform
 from PageModel.SectionModel import Section
 
 '''
@@ -81,7 +82,7 @@ def showOnCmdTitle(username):
         _hour %= 24
         gTime %= 24 * 60 * 60
 
-    timeFormat = str.format("title 好书友 [{0}] {1} days {2}:{3}:{4}",
+    timeFormat = str.format("title 好书友  [{0}]  已运行：{1} 天 {2}:{3}:{4}",
                             username, day.__str__().zfill(2), _hour.__str__().zfill(2),
                             _minute.__str__().zfill(2), _second.__str__().zfill(2))
     os.system(timeFormat)
@@ -110,3 +111,15 @@ def getRandTime(Mode):
         otime = 140
     ext = random.randint(4, 6)
     return otime + ext
+
+
+'''
+##  获取操作系统信息
+'''
+def is_os_of(sysname):
+    sysname = str.lower(sysname)
+    splatform = platform.platform().lower()
+    sversion = platform.version().lower()
+    if splatform.__contains__(sysname) or sversion.__contains__(sysname):
+        return True
+    return False
