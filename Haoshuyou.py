@@ -11,6 +11,9 @@ from PageModel.PageItem import PageItem
 from ResultCode.ReplyCodes import ReplyCodes as rCodes
 
 class Haoshuyou:
+    #   域名
+    MAIN_HOST = 'www.93book.com'
+    PROTOCOL = 'http://'
     #   保存cookie
     cooKie = None
     #   保存会话
@@ -63,9 +66,9 @@ class Haoshuyou:
             'Accept-Encoding': 'gzip,deflate',
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
-            'Host': 'www.93haoshu.com',
-            'Origin': 'http://www.93haoshu.com',
-            'Referer': 'http://www.93haoshu.com/',
+            'Host': self.MAIN_HOST,
+            'Origin': self.PROTOCOL + self.MAIN_HOST,
+            'Referer': self.PROTOCOL + self.MAIN_HOST,
             # 'Cookie': str(self.cooKie),
             'Upgrade-Insecure-Requests': '1',
             'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
@@ -79,9 +82,9 @@ class Haoshuyou:
             'Accept-Encoding': 'gzip,deflate',
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
-            'Host': 'www.93haoshu.com',
-            'Origin': 'http://www.93haoshu.com',
-            'Referer': 'http://www.93haoshu.com/thread-{0}-1-1.html'.format(tid),
+            'Host': self.MAIN_HOST,
+            'Origin': self.PROTOCOL + self.MAIN_HOST,
+            'Referer': self.PROTOCOL + self.MAIN_HOST + '/thread-{0}-1-1.html'.format(tid),
             'Upgrade-Insecure-Requests': '1',
             # 'Cookie': str(self.cooKie),
             'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
@@ -95,8 +98,8 @@ class Haoshuyou:
             'Accept-Encoding': 'gzip,deflate',
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
-            'Host': 'www.93haoshu.com',
-            'Origin': 'http://www.93haoshu.com',
+            'Host': self.MAIN_HOST,
+            'Origin': self.PROTOCOL + self.MAIN_HOST,
             'Referer': url,
             # 'Cookie': str(self.cooKie),
             'Upgrade-Insecure-Requests': '1',
@@ -131,7 +134,7 @@ class Haoshuyou:
         ifLoginFail = ''
         try:
             self.session = requests.session()
-            loginUrl = 'http://www.93haoshu.com/member.php?mod=logging&action=login&loginsubmit=yes&infloat=yes&lssubmit=yes'
+            loginUrl = self.PROTOCOL + self.MAIN_HOST + '/member.php?mod=logging&action=login&loginsubmit=yes&infloat=yes&lssubmit=yes'
             npass = self.getMD5(passwd)
             postData = {
                 'fastloginfield': 'username',
@@ -164,7 +167,7 @@ class Haoshuyou:
             time.sleep(1)
         except Exception as exception:
             self.log("Login failed!!! exception : " + exception.__str__())
-            ##  self.log('登陆失败，文本内容：\n\n' + ifLoginFail + '\n\n')
+            self.log('登陆失败，文本内容：\n\n' + ifLoginFail + '\n\n')
             raise exception
     """
     # pasrseCookie
@@ -183,7 +186,7 @@ class Haoshuyou:
         try:
             self.session = requests.session()
             self.parseCookie(self.cooKie)
-            with self.session.get(url="http://www.93haoshu.com/", headers=self.__getHeader(),
+            with self.session.get(url=self.PROTOCOL + self.MAIN_HOST, headers=self.__getHeader(),
                                    timeout=self.httpTimeOut) as response:
                 response.encoding = 'utf-8'
                 if response.text.__contains__('开启了 CC 防护'):
@@ -213,7 +216,7 @@ class Haoshuyou:
     """
     def logout(self):
         try:
-            url = "http://www.93haoshu.com/member.php?mod=logging&action=logout&formhash={0}".format(self.formHash)
+            url = self.PROTOCOL + self.MAIN_HOST + "/member.php?mod=logging&action=logout&formhash={0}".format(self.formHash)
             with self.session.get(url=url, headers=self.__getHeader(), timeout=self.httpTimeOut) as response:
                 response.encoding = 'gbk'
                 self.log("退出登录...")
@@ -316,7 +319,7 @@ class Haoshuyou:
                 self.asCount = self.asCount - 1
                 self.log('在线探测随机数：{0}'.format(self.asCount))
                 if self.asCount <= 0:
-                    aurl = 'http://www.93haoshu.com/plugin.php?id=gonline:index&action=award&formhash={0}'.format(
+                    aurl = self.PROTOCOL + self.MAIN_HOST + '/plugin.php?id=gonline:index&action=award&formhash={0}'.format(
                             self.formHash)
                     try:
                         time.sleep(1)
@@ -334,6 +337,38 @@ class Haoshuyou:
                     except:
                         pass
             time.sleep(1)
+
+    '''
+    ##  挂机
+    '''
+    def tickEnter(self, url):
+        with self.session.get(url=url, headers=self.buildHeader2(url), timeout=self.httpTimeOut) as response:
+            response.encoding = 'gbk'
+            self.log("Enter page...")
+            #   获取在线任务状态
+            if self.awardStatus is True:
+                # self.asCount = self.asCount - 1
+                self.asCount = 0
+                # self.log('在线探测随机数：{0}'.format(self.asCount))
+                if self.asCount <= 0:
+                    aurl = self.PROTOCOL + self.MAIN_HOST + '/plugin.php?id=gonline:index&action=award&formhash={0}'.format(
+                        self.formHash)
+                    try:
+                        time.sleep(1)
+                        with self.session.get(url=aurl, headers=self.__getHeader(), timeout=5) as aresponse:
+                            aresponse.encoding = 'gbk'
+                            #   验证
+                            if self.verified(aresponse):
+                                response.close()
+                                self.tickEnter(url)
+                                return
+                            if (aresponse.text is '') or ('银币+20' in aresponse.text):
+                                self.awardStatus = False
+                                self.log('今日在线任务完成')
+                            self.log("在线任务探测：" + aresponse.text + " <-")
+                        # self.asCount = 5 + random.randint(1, 3)
+                    except Exception as ex:
+                        raise ex
 
     """
     ##  获取要回复的信息
@@ -440,9 +475,9 @@ class Haoshuyou:
         if 'You have verified successfully' in response.text:
             bs_obj = BeautifulSoup(response.text, 'lxml')
             url = bs_obj.find('a')['href']
-            with self.session.get(url='http://www.93haoshu.com' + url, headers=self.__getHeader(), timeout=self.httpTimeOut) as aresponse:
+            response.close()
+            with self.session.get(url=self.PROTOCOL + self.MAIN_HOST + url, headers=self.__getHeader(), timeout=self.httpTimeOut) as aresponse:
                 self.log('verified...')
                 time.sleep(5)
-                response.close()
                 return True
         return False

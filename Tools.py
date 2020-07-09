@@ -26,9 +26,9 @@ def getSections():
 
 def getSectionsDefault():
     return [
-        Section("同人小说", "http://www.93haoshu.com/forum-2-1.html"),
-        Section("全本小说", "http://www.93haoshu.com/forum-72-1.html"),
-        Section("常规小说", "http://www.93haoshu.com/forum-56-1.html")
+        Section("同人小说", "http://www.338.la/forum-2-1.html"),
+        Section("全本小说", "http://www.338.la/forum-72-1.html"),
+        Section("常规小说", "http://www.338.la/forum-56-1.html")
     ]
 
 
@@ -65,7 +65,7 @@ def getMessagesDefault():
 ##  在cmd窗口上显示时间
 '''
 def showOnCmdTitle(username):
-    global gTime, day
+    global gTime, day, nextTime
     _minute = _hour = _second = int(0)
     _second = gTime
 
@@ -82,20 +82,25 @@ def showOnCmdTitle(username):
         _hour %= 24
         gTime %= 24 * 60 * 60
 
-    timeFormat = str.format("title 好书友  [{0}]  已运行：{1} 天 {2}:{3}:{4}",
+    if nextTime <= 0:
+        nextTime = 0
+
+    timeFormat = str.format("title 好书友  [{0}]  已运行：{1} 天 {2}:{3}:{4}  距离下次回复：{5} 秒",
                             username, day.__str__().zfill(2), _hour.__str__().zfill(2),
-                            _minute.__str__().zfill(2), _second.__str__().zfill(2))
+                            _minute.__str__().zfill(2), _second.__str__().zfill(2),
+                            nextTime.__str__().zfill(2))
     os.system(timeFormat)
 
 
-global gTime, day
+global gTime, day, nextTime
 
 
 def doShowTime(username):
-    global gTime, day
+    global gTime, day, nextTime
     while True:
         showOnCmdTitle(username)
         gTime = gTime + 1
+        nextTime = nextTime - 1
         time.sleep(1)
 
 
@@ -103,14 +108,17 @@ def doShowTime(username):
 ##  获取一个随机等待时间
 '''
 def getRandTime(Mode):
+    global nextTime
     if Mode == 0:
         otime = 30
     elif Mode == 1:
         otime = 170
     elif Mode == 2:
-        otime = 140
+        otime = 82
     ext = random.randint(4, 6)
-    return otime + ext
+    #  设置下次恢复时间
+    nextTime = otime + ext
+    return nextTime
 
 
 '''
@@ -123,3 +131,25 @@ def is_os_of(sysname):
     if splatform.__contains__(sysname) or sversion.__contains__(sysname):
         return True
     return False
+
+'''
+##  用于cooki运行获取配置
+'''
+def loadConfig():
+    try:
+        if os.path.exists('Config/config.json'):
+            with open('Config/config.json') as fp:
+                    config = json.load(fp)
+                    return config
+        else:
+            with open('Config/config.json', 'w') as fp:
+                dic_config = {
+                        "spaceUrl": "个人空间地址",
+                        "formHash": "网页内搜索",
+                        "cooKie": "cookie",
+                        "workMode": 2
+                    }
+                json.dump(dic_config, fp, ensure_ascii=False)
+                return dic_config
+    except Exception:
+        return None

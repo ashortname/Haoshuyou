@@ -51,6 +51,7 @@ if __name__ == '__main__':
         #   必须初始化
         Tools.gTime = int(0)
         Tools.day = int(0)
+        Tools.nextTime = int(0)
         _thread.start_new_thread(Tools.doShowTime, (worker.UserName, ))
     '''
     ##  正式的工作
@@ -76,7 +77,7 @@ if __name__ == '__main__':
                     message = worker.getMessage()
                     worker.log(message)
                     # 拼接回复地址
-                    sendUrl = "http://www.93haoshu.com/forum.php?mod=post&action=reply&fid={0}&tid={1}&extra=page%3D1&replysubmit=yes&infloat=yes&handlekey=fastpost&inajax=1".format(
+                    sendUrl = worker.PROTOCOL + worker.MAIN_HOST + "/forum.php?mod=post&action=reply&fid={0}&tid={1}&extra=page%3D1&replysubmit=yes&infloat=yes&handlekey=fastpost&inajax=1".format(
                         worker.fid, page.tid)
                     sendData = {
                         'select': '',
