@@ -32,7 +32,6 @@ if __name__ == '__main__':
                         slist = ["\\", "|", "/", "-"]
                         delayTime = delayTime - 1
                         # \r 默认将指针返回到最开始后输出（在原位置再次输出）
-                        print('\n')
                         print('\r=== 程序运行中：' + slist[delayTime % 4] + ' ' + str(delayTime) + ' s', end='')
                         time.sleep(1)
                     print('\n')
