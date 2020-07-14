@@ -5,6 +5,18 @@ import datetime
 import time
 from Haoshuyou import Haoshuyou
 
+
+#   延迟函数
+def delay(message, second):
+    ll = len(str(second))
+    spot = ['\\', '-', '/', '|']
+    while second >= 0:
+        print(str.format("\r{0} {3} : {1:>{2}d} s", message, second, ll, spot[second % spot.__len__()]), end='')
+        second = second - 1
+        time.sleep(1)
+    print('\n')
+
+
 EXIT_SIGN = False
 if __name__ == '__main__':
     worker = Haoshuyou()
@@ -24,17 +36,21 @@ if __name__ == '__main__':
         try:
             worker.log('正在登录...')
             worker.login(worker.UserName, worker.PassWord)
-            while worker.awardStatus:
+            while True:
                 try:
                     delayTime = 60 * 3
                     worker.tickEnter(worker.PROTOCOL + worker.MAIN_HOST)
-                    while delayTime >= 0:
-                        slist = ["\\", "|", "/", "-"]
-                        delayTime = delayTime - 1
-                        # \r 默认将指针返回到最开始后输出（在原位置再次输出）
-                        print('\r=== 程序运行中：' + slist[delayTime % 4] + ' ' + str(delayTime) + ' s', end='')
-                        time.sleep(1)
-                    print('\n')
+                    if worker.awardStatus is False:
+                        EXIT_SIGN = True
+                        break
+                    #while delayTime >= 0:
+                    # slist = ["\\", "|", "/", "-"]
+                    # \r 默认将指针返回到最开始后输出（在原位置再次输出）
+                    delay('=== 程序正在运行中', delayTime)
+                    # print(str.format("\r=== 程序正在运行中：{0} {1:>3d} s", slist[delayTime % 4], delayTime), end='')
+                    # print('\r=== 程序运行中：' + slist[delayTime % 4] + ' ' + str(delayTime) + ' s', end='')
+                    time.sleep(1)
+                    delayTime = delayTime - 1
                 except KeyboardInterrupt as kex:
                     print('\n')
                     worker.log('检测到中断信号，程序退出...\n')
@@ -45,10 +61,15 @@ if __name__ == '__main__':
                     break
         except Exception as ex:
             worker.log(ex.__str__())
-            break
         if EXIT_SIGN:
             break
-        worker.log("等待...")
-        time.sleep(5)
-        worker.log('重新登录...\n')
-    worker.log('结束挂机...\n')
+        else:
+            delay('即将重新登陆：', 5)
+            worker.log('重新登录...\n')
+    try:
+        worker.logout()
+    except:
+        pass
+    worker.log('***************************')
+    worker.log('*\t\t结束挂机\t\t*')
+    worker.log('***************************\n')

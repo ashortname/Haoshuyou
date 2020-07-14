@@ -10,6 +10,7 @@ from PageModel.MenuPageModel import MenuPage
 from PageModel.PageItem import PageItem
 from ResultCode.ReplyCodes import ReplyCodes as rCodes
 
+
 class Haoshuyou:
     #   域名
     MAIN_HOST = 'www.93book.com'
@@ -71,7 +72,7 @@ class Haoshuyou:
             'Referer': self.PROTOCOL + self.MAIN_HOST,
             # 'Cookie': str(self.cooKie),
             'Upgrade-Insecure-Requests': '1',
-            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
@@ -87,7 +88,7 @@ class Haoshuyou:
             'Referer': self.PROTOCOL + self.MAIN_HOST + '/thread-{0}-1-1.html'.format(tid),
             'Upgrade-Insecure-Requests': '1',
             # 'Cookie': str(self.cooKie),
-            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
@@ -103,7 +104,7 @@ class Haoshuyou:
             'Referer': url,
             # 'Cookie': str(self.cooKie),
             'Upgrade-Insecure-Requests': '1',
-            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
