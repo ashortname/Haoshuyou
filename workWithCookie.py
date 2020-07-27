@@ -74,7 +74,7 @@ if __name__ == '__main__':
                     message = worker.getMessage()
                     worker.log(message)
                     # 拼接回复地址
-                    sendUrl = "http://www.93haoshu.com/forum.php?mod=post&action=reply&fid={0}&tid={1}&extra=page%3D1&replysubmit=yes&infloat=yes&handlekey=fastpost&inajax=1".format(
+                    sendUrl = "https://www.93haoshu.com/forum.php?mod=post&action=reply&fid={0}&tid={1}&extra=page%3D1&replysubmit=yes&infloat=yes&handlekey=fastpost&inajax=1".format(
                         worker.fid, page.tid)
                     sendData = {
                         'select': '',

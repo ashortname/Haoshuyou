@@ -14,7 +14,7 @@ from ResultCode.ReplyCodes import ReplyCodes as rCodes
 class Haoshuyou:
     #   域名
     MAIN_HOST = 'www.93book.com'
-    PROTOCOL = 'http://'
+    PROTOCOL = 'https://'
     #   保存cookie
     cooKie = None
     #   保存会话
@@ -258,7 +258,7 @@ class Haoshuyou:
                         # print(tds[0].cite.a.get_text() + ' ' + tds[0].em.span.string + '\n') #creator
                         # print(tds[1].cite.a.get_text() + ' ' + tds[1].em.span.string) #lastvisitor
                         # num = plists[0].find('td', {'class': 'num'}).em.string
-                        temp = PageItem(item.td.a['href'], item.td.a['href'].split('-')[1],
+                        temp = PageItem(self.PROTOCOL + self.MAIN_HOST + '/' + item.td.a['href'], item.td.a['href'].split('&')[1][4:],
                                         tds[0].cite.a.get_text(), tds[0].em.span.string,
                                         tds[1].cite.a.get_text(), tds[1].em.span.string,
                                         item.find('td', {'class': 'num'}).em.string)

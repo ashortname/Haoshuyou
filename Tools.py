@@ -26,9 +26,10 @@ def getSections():
 
 def getSectionsDefault():
     return [
-        Section("同人小说", "http://www.338.la/forum-2-1.html"),
-        Section("全本小说", "http://www.338.la/forum-72-1.html"),
-        Section("常规小说", "http://www.338.la/forum-56-1.html")
+        Section("同人小说", "https://www.93book.com/forum-2-1.html"),
+        Section("全本小说", "https://www.93book.com/forum-72-1.html"),
+        Section("常规小说", "https://www.93book.com/forum-56-1.html"),
+        # Section("常规小说", "https://www.338.la/forum-56-1.html")
     ]
 
 

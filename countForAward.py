@@ -52,7 +52,7 @@ if __name__ == '__main__':
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
             'Host': 'www.93book.com',
-            'Referer': 'http://www.93book.com/plugin.php?id=it618_award:award',
+            'Referer': 'https://www.93book.com/plugin.php?id=it618_award:award',
             'X-Requested-With': 'XMLHttpRequest',
             'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
         }
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         mysession = worker.session
         while True:
             try:
-                url = "http://www.93book.com/plugin.php?id=it618_award:ajax&page={0}&formhash={1}&ac=myaward_get".format(page, worker.formHash)
+                url = "https://www.93book.com/plugin.php?id=it618_award:ajax&page={0}&formhash={1}&ac=myaward_get".format(page, worker.formHash)
                 with mysession.get(url=url, headers=headers, timeout=worker.httpTimeOut) as response:
                     response.encoding = 'gbk'
                     bs_obj = BeautifulSoup(response.text, 'html.parser')
