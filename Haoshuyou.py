@@ -155,9 +155,9 @@ class Haoshuyou:
                 if not self.isLoginSuccess(ifLoginFail):
                     raise Exception("登陆失败，请检查用户名或密码！！！")
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
-                fh = bs_obj.find('a', {'href': re.compile("member*")})
+                fh = bs_obj.find('a', {'href': re.compile(".+formhash=")})
                 self.spaceUrl = bs_obj.find('strong', {'class': 'vwmy'}).a['href']
-                self.formHash = fh['href'][-1:-9:-1][::-1]
+                self.formHash = re.search('formhash=.*$', fh['href']).group()[9:]
                 self.cooKie = self.session.cookies
                 #   获取银币数目
                 time.sleep(3)
