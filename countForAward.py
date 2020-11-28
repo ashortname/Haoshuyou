@@ -1,7 +1,4 @@
-import requests
 from bs4 import BeautifulSoup
-import re
-import urllib.parse
 import time
 import sys
 import os

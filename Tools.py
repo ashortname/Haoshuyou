@@ -92,7 +92,6 @@ def showOnCmdTitle(username):
                             nextTime.__str__().zfill(2))
     os.system(timeFormat)
 
-
 global gTime, day, nextTime
 
 

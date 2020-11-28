@@ -1,18 +1,17 @@
-import Tools
 import time
 import datetime
-import sys
 import os
 import _thread
 from requests import RequestException
 from Haoshuyou import Haoshuyou
 from ResultCode.ReplyCodes import ReplyCodes as rCodes
-
+import Tools
 
 #   退出信号
 EXIT_NORMAL = False
 if __name__ == '__main__':
     worker = Haoshuyou()
+    worker.UserName = 'CookieRunner'
     config = Tools.loadConfig()
     if config is None \
             or ['spaceUrl'] is "" \

@@ -13,8 +13,9 @@ from ResultCode.ReplyCodes import ReplyCodes as rCodes
 
 class Haoshuyou:
     #   域名
-    MAIN_HOST = 'www.93book.com'
+    MAIN_HOST = 'www.93hsy.com'
     PROTOCOL = 'https://'
+    HOST = PROTOCOL + MAIN_HOST
     #   保存cookie
     cooKie = None
     #   保存会话
@@ -52,7 +53,6 @@ class Haoshuyou:
     messages = []
     #   回复的版块
     Sections = []
-
     """
     ##  初始化
     """
@@ -63,13 +63,14 @@ class Haoshuyou:
     # 获取http头
     def __getHeader(self):
         return{
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip,deflate',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'Accept-Encoding': 'gzip,deflate,br',
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
             'Host': self.MAIN_HOST,
             'Origin': self.PROTOCOL + self.MAIN_HOST,
-            'Referer': self.PROTOCOL + self.MAIN_HOST,
+            'Referer': self.PROTOCOL + self.MAIN_HOST + '/',
+            'content-type': 'application / x - www - form - urlencoded',
             # 'Cookie': str(self.cooKie),
             'Upgrade-Insecure-Requests': '1',
             'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
@@ -85,7 +86,7 @@ class Haoshuyou:
             'Connection': 'keep-alive',
             'Host': self.MAIN_HOST,
             'Origin': self.PROTOCOL + self.MAIN_HOST,
-            'Referer': self.PROTOCOL + self.MAIN_HOST + '/thread-{0}-1-1.html'.format(tid),
+            'Referer': self.PROTOCOL + self.MAIN_HOST + '/forum.php?mod=viewthread&tid={0}&extra=page%3D1'.format(tid),
             'Upgrade-Insecure-Requests': '1',
             # 'Cookie': str(self.cooKie),
             'User-Agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
@@ -157,6 +158,9 @@ class Haoshuyou:
                 bs_obj = BeautifulSoup(response.text, 'html.parser')
                 fh = bs_obj.find('a', {'href': re.compile(".+formhash=")})
                 self.spaceUrl = bs_obj.find('strong', {'class': 'vwmy'}).a['href']
+                # 开头
+                if not str(self.spaceUrl).startswith('http'):
+                    self.spaceUrl = self.HOST + '/' + self.spaceUrl
                 self.formHash = re.search('formhash=.*$', fh['href']).group()[9:]
                 self.cooKie = self.session.cookies
                 #   获取银币数目
@@ -384,7 +388,10 @@ class Haoshuyou:
     def getPlate(self):
         index = random.randint(0, len(self.Sections) - 1)
         self.log("此次回复板块：" + self.Sections[index].name)
-        return self.Sections[index].url
+        rUrl = self.Sections[index].url
+        if not str(rUrl).startswith('/'):
+            rUrl = '/' + rUrl
+        return self.HOST + rUrl
 
     # 用于记录已经访问过的帖子 -- 加载
     def loadLastVisited(self):
